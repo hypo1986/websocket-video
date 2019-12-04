@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>视频采集</title>
+    <script type="text/javascript">
+        var ws;
+        var wid = 50;
+        document.addEventListener('DOMContentLoaded', function () {
+            WSConnect();
+            var video = document.querySelector('video');
+            var canvas = document.querySelector('canvas');
+            var context = canvas.getContext('2d');
+            var iFilter = 0;
+            var filters = [
+              'grayscale',
+              'sepia',
+              'blur',
+              'brightness',
+              'contrast',
+              'hue-rotate',
+              'hue-rotate2',
+              'hue-rotate3',
+              'saturate',
+              'invert',
+              'none'
+            ];
+ 
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+              navigator.mozGetUserMedia || navigator.msGetUserMedia;
+            window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+            if (navigator.getUserMedia) {
+ 
+                navigator.getUserMedia({ video: true, audio: false }, onSuccessCallback, onErrorCallback);
+                function onSuccessCallback(stream) {
+ 
+                    //video.src = window.URL.createObjectURL(stream) || stream;
+                    video.play();
+                }
+ 
+                function onErrorCallback(e) {
+                    var expl = 'An error occurred: [Reason: ' + e.code + ']';
+                    console.error(expl);
+                    alert(expl);
+                    return;
+                }
+            } else {
+                document.querySelector('.container').style.visibility = 'hidden';
+                document.querySelector('.warning').style.visibility = 'visible';
+                return;
+            }
+ 
+            function getBlob(buffer, format) {
+                try {
+                    return new Blob(buffer, { type: format });
+                } catch (e) {
+                    var bb = new (window.BlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder);
+                    buffer.forEach(function (buf) {
+                        bb.append(buf);
+                    });
+                    return bb.getBlob(format);
+                }
+            }
+ 
+            function get_uuid() {
+                var uuid = '';
+                for (var i = 0; i < 32; i++) {
+                    uuid += Math.floor(Math.random() * 16).toString(16);
+                }
+                return uuid;
+            }
+            var uuid = get_uuid();
+            function drawVideoAtCanvas(obj, context) {
+                window.setInterval(function () {
+                    context.drawImage(obj, 0, 0, wid, wid);
+ 
+                    var base64 = document.getElementById("icanvas").toDataURL('image/png', 1);
+ 
+                        document.getElementById("slenth").value = base64.length;
+                        var binary = atob(base64.split(',')[1]);
+                        var len = binary.length;
+                        var buf = new Uint8Array(len)
+     
+                        for (var i = 0; i < len; i++)
+                        {
+                            buf[i] = binary.charCodeAt(i);
+                        }
+ 
+                        var blob = getBlob([buf], 'image/png');
+                        ws.send(blob);
+                    
+                }, 100);
+            }
+ 
+ 
+            video.addEventListener('play', function () {
+                drawVideoAtCanvas(this, context);
+ 
+            }, false);
+ 
+        }, false);
+ 
+        function WSConnect() {
+ 
+            ws = new WebSocket(document.getElementById('serverInput').value);
+ 
+ 
+            ws.onopen = function (evt) {
+              console.log(evt)
+            };
+ 
+            ws.onclose = function (evt) {
+ 
+            };
+ 
+            ws.onmessage = function (evt) {
+              console.log(evt)
+            }; 
+ 
+            ws.onerror = function (evt) {
+ 
+                alert('Error: ' + evt.data);
+            };
+        }
+ 
+        function SetSize(value) {
+            wid = value;
+            document.getElementById("icanvas").width = wid;
+            document.getElementById("icanvas").height = wid;
+            document.getElementById("ssize").value = wid;
+        }
+    </script>
+</head>
+<body>
+    <div id="input">
+        <!--此处设置视频转发服务地址-->
+        <input id="serverInput" type="text" value="ws://localhost:8888">
+        <input type="range" name="points" min="20" max="200" value="50" οnchange="SetSize(this.value)" />
+        <label>发送大小：</label><input id="ssize" type="text" value="50">
+        <label>base64长度：</label><input id="slenth" type="text" value="50">
+ 
+    </div>
+    <div>
+        <div>
+            <video webkit-playsinline="true" x-webkit-airplay="true" playsinline="true" x5-video-player-type="h5" x5-video-player-fullscreen="true" width="100%" height="100%" preload="auto"></video>
+        </div>
+        <div>
+            <canvas id="icanvas" width="500" height="500"></canvas>
+        </div>
+    </div>
+    </body>
+ 
+    </html>

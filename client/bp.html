@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>视频播放</title>
+</head>
+<body>
+    <img id="receiver" style="width:400px;height:400px"/>
+    
+    <script type="text/javascript" charset="utf-8">
+       //创建一个socket实例
+        var ws = new WebSocket("ws://"+document.domain+":8888");
+        var image = document.getElementById('receiver');
+        //var video = document.getElementsByTagName('video')[0];
+        // 监听消息
+        // receiver_socket.onmessage = function(data){
+        //     //image.src = window.URL.createObjectURL(data.data);
+        //     console.log(data,'0000')
+        //     video.srcObject = data.data;
+        // }
+        ws.onmessage = function (evt) {
+            console.log(evt,'0000')
+            //image.src = window.URL.createObjectURL(evt.data);
+            image.src = evt.data
+        }
+    </script>
+</body>
+</html>
